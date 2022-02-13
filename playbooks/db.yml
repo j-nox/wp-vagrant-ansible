@@ -1,0 +1,62 @@
+---
+- hosts: db-server
+  become: true
+  vars_files:
+    - vars.yml
+
+  tasks:
+    - name: install nano
+      apt:
+        name: nano
+        state: latest
+        update_cache: yes
+
+    - name: install mysql
+      apt: name=mysql-server update_cache=yes cache_valid_time=3600 state=present
+
+    - name: install python3 mysql dependency
+      apt:
+        name: python3-mysqldb
+        state: latest
+
+    - name: start up the mysql service
+      shell: "service mysql start"
+
+    - name: ensure mysql is enabled to run on startup
+      service: name=mysql state=started enabled=true
+
+    - name: update mysql root password for all root accounts
+      mysql_user:
+        name: root
+        password: "{{ mysql_root_password }}"
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+        check_implicit_admin: yes
+        priv: "*.*:ALL,GRANT"
+        host: 192.168.56.23
+      with_items:
+      - "{{ ansible_hostname }}"
+      - 192.168.56.23
+      - ::1
+      - localhost
+
+    - name: reconfigure Mysql Server, allow external connections
+      lineinfile:
+        path: /etc/mysql/mysql.conf.d/mysqld.cnf
+        regexp: '^bind-address\s+='
+        line: 'bind-address = 0.0.0.0'
+        insertafter: '^\[mysqld\]'
+        state: present
+
+    - name: restart up the mysql service
+      shell: "service mysql restart"
+
+    - name: "UFW - Allow DB on port {{ db_port }}"
+      ufw:
+        rule: allow
+        port: "{{ db_port }}"
+        proto: tcp
+      tags: [ system ]
+
+    - name: create a new database
+      mysql_db: name=wp state=present login_user=root login_password="{{ mysql_root_password }}"

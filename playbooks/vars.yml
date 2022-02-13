@@ -1,0 +1,17 @@
+---
+#System Settings
+php_modules: [ 'php-curl', 'php-gd', 'php-mbstring', 'php-xml', 'php-xmlrpc', 'php-soap', 'php-intl', 'php-zip' ]
+
+#HTTP Settings
+app_user: "ubuntu"
+http_host: "192.168.56.23"
+http_conf: "192.168.56.23.conf"
+http_port: "80"
+disable_default: true
+
+#MySQL Settings
+mysql_root_password: "123456789"
+mysql_db: "wp"
+mysql_user: "root"
+mysql_password: "123456789"
+db_port: 3306
